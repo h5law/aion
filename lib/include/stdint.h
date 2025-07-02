@@ -74,14 +74,17 @@ typedef unsigned __int64 uint64_t;
 #endif
 
 /* Pointer-sized integer types */
-#if WORDSIZE == 64
+#if __SIZEOF_POINTER__ == 8
 typedef int64_t  intptr_t;
 typedef uint64_t uintptr_t;
-#elif WORDSIZE == 32
+#elif __SIZEOF_POINTER__ == 4
 typedef int32_t  intptr_t;
 typedef uint32_t uintptr_t;
+#elif __SIZEOF_POINTER__ == 2
+typedef int16_t  intptr_t;
+typedef uint16_t uintptr_t;
 #else
-#error "Cannot define non-standard width pointer types"
+#errpr "Cannot deine non-standard width pointer types"
 #endif
 
 /* Maximum-width integer types */
@@ -92,6 +95,14 @@ typedef uint64_t uintmax_t;
 typedef long          intmax_t;
 typedef unsigned long uintmax_t;
 #endif
+
+uint32_t abs(uint32_t x)
+{
+    uint32_t mask  = x >> 31;
+    x             ^= mask;
+    x             -= mask;
+    return x;
+}
 
 #endif /* #ifndef _STDINT_H */
 

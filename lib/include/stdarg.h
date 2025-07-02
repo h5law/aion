@@ -30,6 +30,15 @@
 
 #ifndef _STDARG_H
 #define _STDARG_H
+
+typedef struct va_list {
+    unsigned char *cur;
+} va_list;
+
+#define va_start(a, last) ((a).cur = ( unsigned char * )(&(last)))
+#define va_arg(a, type)   (*(( type * )((a).cur = (a).cur + sizeof(type))))
+#define va_end(a)         ((a).cur = NULL)
+
 #endif /* #ifndef _STDARG_H */
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin
