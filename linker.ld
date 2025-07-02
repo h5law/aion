@@ -39,7 +39,11 @@ PHDRS
 
 SECTIONS
 {
-    . = 2M;
+    . = 2M; /* Kernel Entru point */
+
+    .vectors : {
+        *(.vectors*) /* Exception vector table */
+    } :text
 
     .text BLOCK(4K) : ALIGN(4K)
     {

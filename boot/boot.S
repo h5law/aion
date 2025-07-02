@@ -38,9 +38,9 @@
 /* Multiboot Header section */
     .section    .multiboot
     .align      4
-.long   MAGIC
-.long   FLAGS
-.long   CHECKSUM
+    .long       MAGIC
+    .long       FLAGS
+    .long       CHECKSUM
 
 /* bss data section
  * Multiboot does **not** provide an initial stack pointer (esp)
@@ -68,4 +68,4 @@ _start:
     jmp     1b                          /* Jump back to halt interrupt instruction */
 .size       _start,     . - _start
 
-/* vim: ft=asm ts=4 sts=4 sw=4 et ai cin */
+/* vim: ft=asm ts=4 sts=4 sw=4 et ai cin *
