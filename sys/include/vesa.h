@@ -38,7 +38,7 @@
 /*****************************************************************************/
 
 /* AL Return Status Values */
-#define VBE_STATUS_FUNC_SUPPORTED 0x4F /* Function is supported */
+#define VBE_STATUS_FUNC_SUPPORTED 0x004F /* Function is supported */
 
 /* AH Return Status Values */
 #define VBE_STATUS_SUCCESS        0x00 /* Function call successful */
@@ -87,9 +87,9 @@ typedef enum {
     mem_hercules = 0x02, /* Hercules graphics */
     mem_planar   = 0x03, /* Planar memory model */
     mem_packed   = 0x04, /* Packed pixel memory model */
-    mem_nchain   = 0x05, /* Non-chain 4, 256 color */
-    mem_drgb     = 0x06, /* Direct color RGB memory model */
-    mem_dyuv     = 0x07, /* Direct color YUV memory model */
+    mem_nchain   = 0x05, /* Non-chain 4, 256 colour */
+    mem_drgb     = 0x06, /* Direct colour RGB memory model */
+    mem_dyuv     = 0x07, /* Direct colour YUV memory model */
     /* 0x08 - 0x0F Reserved for VESA future usage */
     /* 0x10 - 0xFF Defined by the OEM */
 } mem_model_e;
@@ -127,7 +127,7 @@ struct pm_info_block_t {
 
 /* VBE General structure for getting and receiving VBE generic information */
 struct vbe_info_block_t {
-    char          vbe_signature[4]; /* "@ESA" - VBE Signature */
+    char          vbe_signature[4]; /* "VESA" - VBE Signature */
     uint16_t      vbe_version;      /* VBE Version (init: 0x0300) */
     vbe_far_ptr_t oem_string_ptr;   /* Pointer to OEM String */
 
@@ -197,9 +197,9 @@ struct mode_info_block_t {
      *      - [4] Mode type
      *            - 0 = Text mode
      *            - 1 = Graphics mode
-     *      - [3] = Monochrome/color mode (see note below)
+     *      - [3] = Monochrome/colour mode (see note below)
      *            - 0 = Monochrome mode
-     *            - 1 = Color mode
+     *            - 1 = Colour mode
      *      - [2] TTY Output functions supported by BIOS
      *            - 0 = TTY Output functions not supported by BIOS
      *            - 1 = TTY Output functions supported by BIOS
@@ -236,7 +236,7 @@ struct mode_info_block_t {
     uint8_t win_b_attributes;
 
     uint16_t win_granularity;     /* granularity in KB (smallest boundry) */
-    uint16_t win_size;            /* window size */
+    uint16_t win_len;             /* window size */
     uint16_t win_a_segment;       /* window A start segment */
     uint16_t win_b_segment;       /* window B start segment */
     uint32_t win_func_ptr;        /* real mode pointer to window function */
@@ -245,25 +245,25 @@ struct mode_info_block_t {
     /* Mandatory information for VBE 1.2 and above */
     uint16_t x_resolution; /* horizontal resolution in pixels or characters */
     uint16_t y_resolution; /* vertical resolution in pixels or characters */
-    uint8_t  x_char_size;  /* character cell width in pixels */
-    uint8_t  y_char_size;  /* character cell height in pixels */
+    uint8_t  x_char_len;   /* character cell width in pixels */
+    uint8_t  y_char_len;   /* character cell height in pixels */
     uint8_t  number_of_planes;         /* number of memory planes */
     uint8_t  bits_per_pixel;           /* bits per pixel */
     uint8_t  number_of_banks;          /* number of banks */
     mem_model_e memory_model;          /* memory model type */
-    uint8_t     bank_size;             /* bank size in KB */
+    uint8_t     bank_len;              /* bank size in KB */
     uint8_t     number_of_image_pages; /* number of images */
 
     uint8_t reserved1;                 /* reserved for page function */
 
-    /* Direct Color fields (required for direct/6 and YUV/7 memory models) */
-    uint8_t red_mask_size;   /* size of direct color red mask in bits */
+    /* Direct Colour fields (required for direct/6 and YUV/7 memory models) */
+    uint8_t red_mask_len;    /* size of direct colour red mask in bits */
     uint8_t red_field_pos;   /* bit position of lsb of red mask */
-    uint8_t green_mask_size; /* size of direct color green mask in bits */
+    uint8_t green_mask_len;  /* size of direct colour green mask in bits */
     uint8_t green_field_pos; /* bit position of lsb of green mask */
-    uint8_t blue_mask_size;  /* size of direct color blue mask in bits */
+    uint8_t blue_mask_len;   /* size of direct colour blue mask in bits */
     uint8_t blue_field_pos;  /* bit position of lsb of blue mask */
-    uint8_t rsvd_mask_size;  /* size of direct color reserved mask in bits */
+    uint8_t rsvd_mask_len;   /* size of direct colour reserved mask in bits */
     uint8_t rsvd_field_pos;  /* bit position of lsb of reserved mask */
 
     /* Direct colour mode attributes
@@ -273,7 +273,7 @@ struct mode_info_block_t {
      *      - [0] State of colour ramp
      *          - 0 ramp is fixed
      *          - 1 ramp is programmable */
-    uint8_t direct_color_mode_info;
+    uint8_t direct_colour_mode_info;
 
     /* Mandatory information for VBE 2.0 and above */
     uint32_t phys_base_ptr; /* physical address for flat memory frame buffer */
@@ -285,13 +285,14 @@ struct mode_info_block_t {
     uint16_t lin_bytes_per_scan_line; /* bytes per scan line for linear modes */
     uint8_t  bnk_number_of_image_pages; /* number of images for banked modes */
     uint8_t  lin_number_of_image_pages; /* number of images for linear modes */
-    uint8_t  lin_red_mask_size; /* direct color red mask size in linear modes */
-    uint8_t  lin_red_field_pos; /* LSB pos of red mask linear modes */
-    uint8_t lin_green_mask_size; /* direct color green mask size linear modes */
+    uint8_t  lin_red_mask_len; /* direct colour red mask size in linear modes */
+    uint8_t  lin_red_field_pos;  /* LSB pos of red mask linear modes */
+    uint8_t  lin_green_mask_len; /* direct colour green mask size linear modes
+                                  */
     uint8_t lin_green_field_pos; /* bit pos of lsb of green mask linear modes */
-    uint8_t lin_blue_mask_size;  /* direct color blue mask size linear modes */
+    uint8_t lin_blue_mask_len;   /* direct colour blue mask size linear modes */
     uint8_t lin_blue_field_pos;  /* LSB position of blue mask linear modes */
-    uint8_t lin_rsvd_mask_size;  /* direct color rsvd mask size linear modes */
+    uint8_t lin_rsvd_mask_len;   /* direct colour rsvd mask size linear modes */
     uint8_t lin_rsvd_field_pos; /* LSB position of reserved mask linear modes */
     uint32_t max_pixel_clock;   /* max pixel clock (in Hz) for graphics mode */
 
@@ -356,7 +357,7 @@ struct pallette_entry_t {
  * Output:  AX    = 0x4F00 (success) indicates ES:DI has valid information
  *                = 0xXXXX (failure) vbe information request failed bios error
  *                                   ES:DI may have invalid or corrupted data */
-#define VESA_FUNC_GET_VBE_INFO            0x4F00
+#define VESA_FUNC_GET_VBE_INFO          0x4F00
 
 /* Get VBE mode information function
  * Input:   AX    = 0x4F01 - function code
@@ -365,7 +366,7 @@ struct pallette_entry_t {
  * Output:  AX    = 0x4F00 (success) indicates ES:DI has valid information
  *                = 0xXXXX (failure) mode (CV) is unsupported or bios error
  *                                   ES:DI may have invalid or corrupted data */
-#define VESA_FUNC_GET_VBE_MODE_INFO       0x4F01
+#define VESA_FUNC_GET_VBE_MODE_INFO     0x4F01
 
 /* Set VBE mode function
  * Input:   AX    = 0x4F02 - function code
@@ -377,7 +378,7 @@ struct pallette_entry_t {
  *                                        - Unsupported VBE mode
  *                                        - Mode doesnt support LFB
  *                                        - ... */
-#define VESA_FUNC_SET_VBE_MODE            0x4F02
+#define VESA_FUNC_SET_VBE_MODE          0x4F02
 
 /* Get VBE current mode function
  * Input:   AX    = 0x4F03 - function code
@@ -391,7 +392,7 @@ struct pallette_entry_t {
  *                  [14] LFB Bit - 1 linear frame buffer is enabled
  *                                 0 bank switching`mode in use
  *                  [13-0] Mode number */
-#define VESA_FUNC_GET_VBE_MODE            0x4F03
+#define VESA_FUNC_GET_VBE_MODE          0x4F03
 
 /* Save/Restore state function
  * Input:  AX   = 0x4F04 - function mode
@@ -407,7 +408,7 @@ struct pallette_entry_t {
  * Output: AX   = VBE Return Status
  *         BX   = Number of 64-byte blocks to hold the state
  *                buffer (if DL=00h) */
-#define VESA_FUNC_SAVE_RESTORE_STATE      0x4F04
+#define VESA_FUNC_SAVE_RESTORE_STATE    0x4F04
 
 /* Display Window Control function
  * Input:   AX    = 0x4F05 - function code
@@ -425,7 +426,7 @@ struct pallette_entry_t {
  *                                       - Not in bank switching mode
  *                                       - ...
  *         DX     = Bank/Window number in window granularity units (get only) */
-#define VESA_FUNC_VBE_DWC                 0x4F05
+#define VESA_FUNC_VBE_DWC               0x4F05
 
 /* Set/Get Logical Scan Line Length function
  * Input:   AX    = 0x4F06 - function code
@@ -440,7 +441,7 @@ struct pallette_entry_t {
  *          BX    = Bytes Per Scan Line
  *          CX    = Actual Pixels Per Scan Line (truncated to nearest complete
  * pixel) DX    = Maximum Number of Scan Lines */
-#define VESA_FUNC_SET_GET_SCAN_LINE       0x4F06
+#define VESA_FUNC_SET_GET_SCAN_LINE     0x4F06
 
 /* Set/Get Display Start function
  * Input:   AX    = 0x4F07 - function code
@@ -466,7 +467,7 @@ struct pallette_entry_t {
  *          CX    = If BL=0x01 First Displayed Pixel In Scan Line
  *                  If BL=0x04 0 if flip has not occurred, not 0 if it has
  *          DX    = If BL=0x01 First Displayed Scan Line */
-#define VESA_FUNC_SET_GET_0xDISPLAY_START 0x4F07
+#define VESA_FUNC_SET_GET_DISPLAY_START 0x4F07
 
 /* Set/Get DAC Palette Format function
  * Input:   AX    = 0x4F08 - function code
@@ -475,7 +476,7 @@ struct pallette_entry_t {
  *          BH    = Desired bits of colour per primary (Set only)
  * Output:  AX    = VBE Return Status
  *          BH    = Current number of bits of colour per primary */
-#define VESA_FUNC_SET_GET_DAC_PALETTE     0x4F08
+#define VESA_FUNC_SET_GET_DAC_PALETTE   0x4F08
 
 /* Set/Get Palette Data function
  * Input:   AX    = 0x4F09 - function code
@@ -490,7 +491,7 @@ struct pallette_entry_t {
  *          ES:EDI= Table of palette values (32-bit mode)
  *          DS    = Selector for memory mapped registers (32-bit mode)
  * Output:  AX    = VBE Return Status */
-#define VESA_FUNC_SET_GET_PALETTE_DATA    0x4F09
+#define VESA_FUNC_SET_GET_PALETTE_DATA  0x4F09
 
 /* Get VBE 2.0+ Protected Mode Interface function
  * Input:   AX    = 0x4F0A - function code
@@ -503,7 +504,7 @@ struct pallette_entry_t {
  *                                       - ...
  *         ES:DI = Segment:Offset pointer to the vbe2_pmi_table_t structure
  *         CX    = Length of the table including code in bytes for copying */
-#define VESA_FUNC_GET_VBE_PMI             0x4F0A
+#define VESA_FUNC_GET_VBE_PMI           0x4F0A
 
 /* Get/Set pixel clock function
  * Input:   AX    = 0x4F0B - function code
@@ -512,7 +513,31 @@ struct pallette_entry_t {
  *          DX    = Mode number pixel clock will be used with
  * Output:  AX    = VBE Return Status
  *          ECX   = Closest pixel clock (BL = 00h) */
-#define VESA_FUNC_GET_SET_PIXEL_CLOCK     0x4F0B
+#define VESA_FUNC_GET_SET_PIXEL_CLOCK   0x4F0B
+
+/*****************************************************************************/
+/*                           Function Signatures                             */
+/*****************************************************************************/
+
+/* VBE Data Requests */
+int            get_vbe_info(void);
+int            get_vbe_mode_info(vbe_mode_num_t mode);
+int            set_vbe_mode(vbe_mode_num_t mode);
+vbe_mode_num_t get_vbe_mode(void);
+
+/* Rendering */
+int  set_vbe_bank(uint32_t bank);
+void put_pixel(uint32_t x, uint32_t y, uint32_t colour);
+void line(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t colour);
+void draw_moire(void);
+void available_modes(void);
+void init_vbe(uint32_t x, uint32_t y);
+
+/* Plenary mode specific reference functions */
+int            outp(uint16_t port, uint16_t data_byte);
+unsigned short outpw(uint16_t port, uint16_t data_word);
+void           init_planar();
+void           put_pixel_p(uint32_t x, uint32_t y, uint32_t colour);
 
 #endif /* #ifndef _VESA_H */
 
