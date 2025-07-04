@@ -1,39 +1,53 @@
 /* vesa.c
- * Copyright (c) 2025 - h5law <dev@h5law.com>
+ * Copyright 2025 h5law <dev@h5law.com>
  *
- * This software is provided 'as-is', without any express or implied
- * warranty. In no event will the authors be held liable for any damages
- * arising from the use of this software.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
- * 1. The origin of this software must not be misrepresented; you must not
- *    claim that you wrote the original software. If you use this software
- *    in a product, an acknowledgement in the product documentation would be
- *    appreciated but is not required.
- * 2. Altered source versions must be plainly marked as such, and must not be
- *    misrepresented as being the original software.
- * 3. This notice may not be removed or altered from any source distribution.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdlib.h>
 #include <stdint.h>
 
-#include <vesa.h>
+#include <kernel/vesa.h>
+
+#include <stdio.h>
 
 struct vbe_info_block_t  VBE_INFO_BLOCK  = {0};
 struct mode_info_block_t MODE_INFO_BLOCK = {0};
 
 uint32_t       x_resolution   = 0; /* Resolution of video mode used */
 uint32_t       y_resolution   = 0; /* in width (x) and height (y) */
-uint32_t       bytes_per_line = 0; /*  Logical CRT scanline length */
+uint32_t       bytes_per_line = 0; /* Logical CRT scanline length */
 uint32_t       current_bank   = 0; /* Current rw bank/window */
 uint32_t       bank_shift     = 0; /* Bank granularity adjustment factor */
 vbe_mode_num_t old_mode       = 0; /* Old/Previous video mode number */
 
-volatile uintptr_t screen_ptr = 0x00000000; /* Pointer to video memory */
-void (*bank_switch)(void);                  /* Direct bank switching function */
+volatile uint32_t *screen_ptr =
+        ( uint32_t * )0xe0000000;  /* Pointer to video memory */
+void (*bank_switch)(void);         /* Direct bank switching function */
 
 int get_vbe_info(void)
 {
@@ -72,7 +86,7 @@ int get_vbe_mode_info(vbe_mode_num_t mode)
     if (mode < 0x100)
         return 0;
 
-    for (int i = 0; i < sizeof(struct mode_info_block_t); ++i)
+    for (size_t i = 0; i < sizeof(struct mode_info_block_t); ++i)
         *(( uint8_t * )&MODE_INFO_BLOCK + i) = 0;
 
     __asm__ volatile(
@@ -295,9 +309,8 @@ void init_vbe(uint32_t x, uint32_t y)
 {
     uintptr_t p;
     if (!get_vbe_info()) {
-        // TODO: kprintf("No VESA VBE detected\n");
-        // TODO: exit(1);
-        return;
+        printf("[kaion] No VESA VBE detected\n");
+        abort();
     }
     for (p = VBE_INFO_BLOCK.video_mode_ptr; p != ( unsigned )-1; ++p) {
         if (get_vbe_mode_info(( vbe_mode_num_t )p) &&
@@ -312,15 +325,14 @@ void init_vbe(uint32_t x, uint32_t y)
                 bank_shift++;
             bank_switch  = ( void * )( uintptr_t )MODE_INFO_BLOCK.win_func_ptr;
             current_bank = -1;
-            screen_ptr   = ((( long )0xA000) << 16 | 0);
+            screen_ptr   = ( uint32_t * )0xe0000000;
             old_mode     = get_vbe_mode();
             set_vbe_mode(( vbe_mode_num_t )p);
             return;
         }
     }
-    // TODO: kprintf("Valid video mode not found\n");
-    // TODO: exit(1);
-    return;
+    printf("[kaion] Valid video mode not found\n");
+    abort();
 }
 
 int outp(uint16_t port, uint16_t data_byte)
@@ -353,7 +365,7 @@ void put_pixel_p(uint32_t x, uint32_t y, uint32_t colour)
     set_vbe_bank(( uint32_t )(addr >> 16));
     outp(0x3CE, 8);
     outp(0x3CF, 0x80 >> (x & 7));
-    dummy_read                                   = screen_ptr + (addr & 0xFFFF);
+    dummy_read = *(screen_ptr + (addr & 0xFFFF));
     *(( uint8_t * )screen_ptr + (addr & 0xFFFF)) = ( uint8_t )colour;
 }
 

@@ -138,6 +138,6 @@
 #define UINTMAX_MAX ULONG_MAX
 #endif
 
-#endif /* #ifndef _LIMITS_H */
+#endif /* _LIMITS_H */
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

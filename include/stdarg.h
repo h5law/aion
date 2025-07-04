@@ -39,6 +39,6 @@ typedef struct va_list {
 #define va_arg(a, type)   (*(( type * )((a).cur = (a).cur + sizeof(type))))
 #define va_end(a)         ((a).cur = NULL)
 
-#endif /* #ifndef _STDARG_H */
+#endif /* _STDARG_H */
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

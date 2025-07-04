@@ -28,8 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _VESA_H
-#define _VESA_H
+#ifndef _KERNEL_VESA_H
+#define _KERNEL_VESA_H
 
 #include <stdint.h>
 
@@ -539,6 +539,6 @@ unsigned short outpw(uint16_t port, uint16_t data_word);
 void           init_planar();
 void           put_pixel_p(uint32_t x, uint32_t y, uint32_t colour);
 
-#endif /* #ifndef _VESA_H */
+#endif /* _KERNEL_VESA_H */
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

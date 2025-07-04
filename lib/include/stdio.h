@@ -1,4 +1,4 @@
-/* stddef.h
+/* stdio.h
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STDDEF_H
-#define _STDDEF_H
-#endif /* #ifndef _STDDEF_H */
+#ifndef _STDIO_H
+#define _STDIO_H
+
+#include <sys/cdefs.h>
+
+#define EOF (-1)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int printf(const char *restrict, ...);
+int putchar(int);
+int puts(const char *);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _STDIO_H */
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

@@ -96,14 +96,8 @@ typedef long          intmax_t;
 typedef unsigned long uintmax_t;
 #endif
 
-uint32_t abs(uint32_t x)
-{
-    uint32_t mask  = x >> 31;
-    x             ^= mask;
-    x             -= mask;
-    return x;
-}
+#define ABS32(x) (((x) ^ ((x) >> 31)) - ((x) >> 31))
 
-#endif /* #ifndef _STDINT_H */
+#endif /* _STDINT_H */
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

@@ -1,4 +1,4 @@
-/* iso646.h
+/* abs.c
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ISO646_H
-#define _ISO646_H
-#endif /* #ifndef _ISO646_H */
+#include <stdlib.h>
+
+int  abs(int x) { return x >= 0 ? x : -x; }
+long labs(long x) { return x >= 0 ? x : -x; }
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

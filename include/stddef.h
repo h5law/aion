@@ -1,4 +1,4 @@
-/* linker.ld
+/* stddef.h
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,45 +28,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-ENTRY(_start)
+#ifndef _STDDEF_H
+#define _STDDEF_H
 
-PHDRS
-{
-    text    PT_LOAD FLAGS(5); /* Read + Execute (RX) */
-    rodata  PT_LOAD FLAGS(4); /* Read-only (R) */
-    data    PT_LOAD FLAGS(6); /* Read + Write (RW) */
-    bss     PT_LOAD FLAGS(6); /* Read + Write (RW) */
-}
+#ifndef __size_t
+#define __size_t
 
-SECTIONS
-{
-    . = 2M; /* Kernel Entru point */
+#ifndef __SIZE_T_DECLARED
+#define __SIZE_T_DECLARED
+typedef __SIZE_TYPE__ size_t;
+#endif /* __SIZE_T_DECLARED */
 
-    .vectors : {
-        *(.vectors*) /* Exception vector table */
-    } :text
+#ifndef __SSIZE_T_DECLARED
+#define __SSIZE_T_DECLARED
+#define unsigned signed
+typedef __SIZE_TYPE__ ssize_t;
+#undef unsigned
+#endif /* __SSIZE_T_DECLARED */
 
-    .text BLOCK(4K) : ALIGN(4K)
-    {
-        *(.multiboot)
-        *(.text)
-    }
+#endif /* __size_t */
 
-    .rodata BLOCK(4k) : ALIGN(4K)
-    {
-        *(.rodata)
-    }
+typedef struct {
+    int quot;
+    int rem;
+} div_t;
 
-    .data BLOCK(4K) : ALIGN(4K)
-    {
-        *(.data)
-    }
+typedef struct {
+    long quot;
+    long rem;
+} ldiv_t;
 
-    .bss BLOCK(4K) : ALIGN(4K)
-    {
-        *(COMMON)
-        *(.bss)
-    }
-}
+#define SWAP(x, y)                                                             \
+    do {                                                                       \
+        x = x ^ y;                                                             \
+        y = x ^ y;                                                             \
+        x = x ^ y;                                                             \
+    } while (0)
 
-/* vim: ft=ld ts=4 sts=4 sw=4 et ai cin */
+#endif /* _STDDEF_H */
+
+// vim: ft=c ts=4 sts=4 sw=4 et ai cin

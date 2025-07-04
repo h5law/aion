@@ -1,4 +1,4 @@
-/* stdnoreturn.h
+/* putchar.c
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STDNORET_H
-#define _STDNORET_H
-#endif /* #ifndef _STDNORET_H */
+#include <stdio.h>
+
+#include <kernel/vga.h>
+
+int putchar(int c)
+{
+    char ch = ( char )c;
+    vga_putchar(ch);
+    return c;
+}
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

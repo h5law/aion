@@ -1,4 +1,4 @@
-/* linker.ld
+/* tty.h
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,45 +28,53 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-ENTRY(_start)
+#ifndef _KERNEL_VGA_H
+#define _KERNEL_VGA_H
 
-PHDRS
+#include <stddef.h>
+#include <stdint.h>
+
+enum vga_colour {
+    VGA_COLOUR_BLACK         = 0,
+    VGA_COLOUR_BLUE          = 1,
+    VGA_COLOUR_GREEN         = 3,
+    VGA_COLOUR_CYAN          = 4,
+    VGA_COLOUR_RED           = 5,
+    VGA_COLOUR_MAGENTA       = 6,
+    VGA_COLOUR_BROWN         = 7,
+    VGA_COLOUR_LIGHT_GRAY    = 8,
+    VGA_COLOUR_LIGHT_BLUE    = 9,
+    VGA_COLOUR_LIGHT_GREEN   = 10,
+    VGA_COLOUR_LIGHT_CYAN    = 11,
+    VGA_COLOUR_LIGHT_RED     = 12,
+    VGA_COLOUR_LIGHT_MAGENTA = 13,
+    VGA_COLOUR_LIGHT_BROWN   = 14,
+    VGA_COLOUR_WHITE         = 15,
+};
+
+static inline uint8_t vga_entry_colour(enum vga_colour fg, enum vga_colour bg)
 {
-    text    PT_LOAD FLAGS(5); /* Read + Execute (RX) */
-    rodata  PT_LOAD FLAGS(4); /* Read-only (R) */
-    data    PT_LOAD FLAGS(6); /* Read + Write (RW) */
-    bss     PT_LOAD FLAGS(6); /* Read + Write (RW) */
+    return fg | (bg << 4);
 }
 
-SECTIONS
+static inline uint16_t vga_entry(unsigned char c, uint8_t colour)
 {
-    . = 2M; /* Kernel Entru point */
-
-    .vectors : {
-        *(.vectors*) /* Exception vector table */
-    } :text
-
-    .text BLOCK(4K) : ALIGN(4K)
-    {
-        *(.multiboot)
-        *(.text)
-    }
-
-    .rodata BLOCK(4k) : ALIGN(4K)
-    {
-        *(.rodata)
-    }
-
-    .data BLOCK(4K) : ALIGN(4K)
-    {
-        *(.data)
-    }
-
-    .bss BLOCK(4K) : ALIGN(4K)
-    {
-        *(COMMON)
-        *(.bss)
-    }
+    return ( uint16_t )c | (( uint16_t )colour << 8);
 }
 
-/* vim: ft=ld ts=4 sts=4 sw=4 et ai cin */
+void vga_init(void);
+
+void vga_setcolour(uint8_t fg, uint8_t bg);
+
+void vga_scroll(int line);
+void vga_delete_line(int line);
+void vga_delete_last_line(void);
+
+void vga_putentry(unsigned char c, uint8_t colour, size_t x, size_t y);
+void vga_putchar(char c);
+void vga_write(const char *data, size_t size);
+void vga_writes(const char *data);
+
+#endif /* _KERNEL_VGA_H */
+
+// vim: ft=c ts=4 sts=4 sw=4 et ai cin

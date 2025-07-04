@@ -1,4 +1,4 @@
-/* linker.ld
+/* itoa.c
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,45 +28,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-ENTRY(_start)
+#include <stdlib.h>
 
-PHDRS
+char *itoa(int n, char *str, int base)
 {
-    text    PT_LOAD FLAGS(5); /* Read + Execute (RX) */
-    rodata  PT_LOAD FLAGS(4); /* Read-only (R) */
-    data    PT_LOAD FLAGS(6); /* Read + Write (RW) */
-    bss     PT_LOAD FLAGS(6); /* Read + Write (RW) */
+    int i          = 0;
+    int isNegative = 0;
+
+    if (n == 0) {
+        str[i++] = '0';
+        str[i]   = '\0';
+        return str;
+    }
+    if (n < 0 && base == 10) {
+        isNegative = 1;
+        n          = -n;
+    }
+    while (n != 0) {
+        int rem  = n % base;
+        str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+        div_t dt = div(n, base);
+        n        = dt.quot;
+    }
+    if (isNegative)
+        str[i++] = '-';
+    str[i] = '\0';
+    reverse(str, i);
+
+    return str;
 }
 
-SECTIONS
-{
-    . = 2M; /* Kernel Entru point */
-
-    .vectors : {
-        *(.vectors*) /* Exception vector table */
-    } :text
-
-    .text BLOCK(4K) : ALIGN(4K)
-    {
-        *(.multiboot)
-        *(.text)
-    }
-
-    .rodata BLOCK(4k) : ALIGN(4K)
-    {
-        *(.rodata)
-    }
-
-    .data BLOCK(4K) : ALIGN(4K)
-    {
-        *(.data)
-    }
-
-    .bss BLOCK(4K) : ALIGN(4K)
-    {
-        *(COMMON)
-        *(.bss)
-    }
-}
-
-/* vim: ft=ld ts=4 sts=4 sw=4 et ai cin */
+// vim: ft=c ts=4 sts=4 sw=4 et ai cin

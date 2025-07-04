@@ -1,4 +1,4 @@
-/* linker.ld
+/* stdlib.h
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,45 +28,53 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-ENTRY(_start)
+#ifndef _STDLIB_H
+#define _STDLIB_H
 
-PHDRS
-{
-    text    PT_LOAD FLAGS(5); /* Read + Execute (RX) */
-    rodata  PT_LOAD FLAGS(4); /* Read-only (R) */
-    data    PT_LOAD FLAGS(6); /* Read + Write (RW) */
-    bss     PT_LOAD FLAGS(6); /* Read + Write (RW) */
+#include <sys/cdefs.h>
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef NULL
+#define NULL (( void * )0)
+#endif /* NULL */
+
+#ifndef FALSE
+#define FALSE 0
+#endif /* FALSE */
+
+#ifndef TRUE
+#define TRUE 1
+#endif /* TRUE */
+
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif /* EXIT_SUCCESS */
+
+#ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
+#endif /* EXIT_FAILURE */
+
+__attribute__((__noreturn__)) void abort(void);
+
+int  abs(int x);
+long labs(long x);
+
+int    abs(int x);
+long   labs(long x);
+div_t  div(int n, int d);
+ldiv_t ldiv(long n, long d);
+char  *itoa(int n, char *str, int base);
+
+void reverse(char *str, size_t len);
+
+#ifdef __cplusplus
 }
+#endif
 
-SECTIONS
-{
-    . = 2M; /* Kernel Entru point */
+#endif /* _STDLIB_H */
 
-    .vectors : {
-        *(.vectors*) /* Exception vector table */
-    } :text
-
-    .text BLOCK(4K) : ALIGN(4K)
-    {
-        *(.multiboot)
-        *(.text)
-    }
-
-    .rodata BLOCK(4k) : ALIGN(4K)
-    {
-        *(.rodata)
-    }
-
-    .data BLOCK(4K) : ALIGN(4K)
-    {
-        *(.data)
-    }
-
-    .bss BLOCK(4K) : ALIGN(4K)
-    {
-        *(COMMON)
-        *(.bss)
-    }
-}
-
-/* vim: ft=ld ts=4 sts=4 sw=4 et ai cin */
+// vim: ft=c ts=4 sts=4 sw=4 et ai cin

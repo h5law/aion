@@ -1,4 +1,4 @@
-/* linker.ld
+/* stdbool.h
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,45 +28,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-ENTRY(_start)
+#ifndef _STDBOOL_H
+#define _STDBOOL_H
 
-PHDRS
-{
-    text    PT_LOAD FLAGS(5); /* Read + Execute (RX) */
-    rodata  PT_LOAD FLAGS(4); /* Read-only (R) */
-    data    PT_LOAD FLAGS(6); /* Read + Write (RW) */
-    bss     PT_LOAD FLAGS(6); /* Read + Write (RW) */
-}
+#include <stdlib.h>
 
-SECTIONS
-{
-    . = 2M; /* Kernel Entru point */
+#ifndef __cplusplus
 
-    .vectors : {
-        *(.vectors*) /* Exception vector table */
-    } :text
+#if __STDC_VERSION__ >= 202311L /* >= C23 */
 
-    .text BLOCK(4K) : ALIGN(4K)
-    {
-        *(.multiboot)
-        *(.text)
-    }
+#define true                      (( _Bool )1)
+#define false                     (( _Bool )0)
+#define __bool_true_false_defined 1
 
-    .rodata BLOCK(4k) : ALIGN(4K)
-    {
-        *(.rodata)
-    }
+#elif __STDC_VERSION__ >= 199901L /* >= C99 */
 
-    .data BLOCK(4K) : ALIGN(4K)
-    {
-        *(.data)
-    }
+typedef _Bool bool;
+#define true                      (( bool )1)
+#define false                     (( bool )0)
 
-    .bss BLOCK(4K) : ALIGN(4K)
-    {
-        *(COMMON)
-        *(.bss)
-    }
-}
+#define __bool_true_false_defined 1
 
-/* vim: ft=ld ts=4 sts=4 sw=4 et ai cin */
+#else /* < C99 */
+
+typedef int bool;
+#define true                      1
+#define false                     0
+
+#define __bool_true_false_defined 1
+
+#endif
+
+#endif
+
+#endif /* _STDBOOL_H */
+
+// vim: ft=c ts=4 sts=4 sw=4 et ai cin

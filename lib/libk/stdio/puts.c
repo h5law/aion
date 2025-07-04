@@ -1,4 +1,4 @@
-/* float.h
+/* putchar.c
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FLOAT_H
-#define _FLOAT_H
-#endif /* #ifndef _FLOAT_H */
+#include <stdio.h>
+
+#include <kernel/vga.h>
+
+int puts(const char *str)
+{
+    vga_writes(str);
+    return 1;
+}
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

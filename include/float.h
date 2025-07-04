@@ -1,4 +1,4 @@
-/* linker.ld
+/* float.h
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,45 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-ENTRY(_start)
+#ifndef _FLOAT_H
+#define _FLOAT_H
+#endif /* _FLOAT_H */
 
-PHDRS
-{
-    text    PT_LOAD FLAGS(5); /* Read + Execute (RX) */
-    rodata  PT_LOAD FLAGS(4); /* Read-only (R) */
-    data    PT_LOAD FLAGS(6); /* Read + Write (RW) */
-    bss     PT_LOAD FLAGS(6); /* Read + Write (RW) */
-}
-
-SECTIONS
-{
-    . = 2M; /* Kernel Entru point */
-
-    .vectors : {
-        *(.vectors*) /* Exception vector table */
-    } :text
-
-    .text BLOCK(4K) : ALIGN(4K)
-    {
-        *(.multiboot)
-        *(.text)
-    }
-
-    .rodata BLOCK(4k) : ALIGN(4K)
-    {
-        *(.rodata)
-    }
-
-    .data BLOCK(4K) : ALIGN(4K)
-    {
-        *(.data)
-    }
-
-    .bss BLOCK(4K) : ALIGN(4K)
-    {
-        *(COMMON)
-        *(.bss)
-    }
-}
-
-/* vim: ft=ld ts=4 sts=4 sw=4 et ai cin */
+// vim: ft=c ts=4 sts=4 sw=4 et ai cin

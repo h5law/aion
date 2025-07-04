@@ -1,4 +1,4 @@
-/* linker.ld
+/* string.h
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,45 +28,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-ENTRY(_start)
+#ifndef _STRING_H
+#define _STRING_H
 
-PHDRS
-{
-    text    PT_LOAD FLAGS(5); /* Read + Execute (RX) */
-    rodata  PT_LOAD FLAGS(4); /* Read-only (R) */
-    data    PT_LOAD FLAGS(6); /* Read + Write (RW) */
-    bss     PT_LOAD FLAGS(6); /* Read + Write (RW) */
+#include <sys/cdefs.h>
+#include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int   memcmp(const void *dest, const void *src, size_t size);
+int   memvacmp(const void *mem, unsigned char val, size_t size);
+void *memcpy(void *dest, const void *src, size_t size);
+void *memmove(void *dest, const void *src, size_t size);
+void *memset(void *mem, int val, size_t size);
+
+size_t strlen(const char *);
+char  *strcpy(char *dest, const char *src);
+
+#ifdef __cplusplus
 }
+#endif
 
-SECTIONS
-{
-    . = 2M; /* Kernel Entru point */
+#endif /* _STRING_H */
 
-    .vectors : {
-        *(.vectors*) /* Exception vector table */
-    } :text
-
-    .text BLOCK(4K) : ALIGN(4K)
-    {
-        *(.multiboot)
-        *(.text)
-    }
-
-    .rodata BLOCK(4k) : ALIGN(4K)
-    {
-        *(.rodata)
-    }
-
-    .data BLOCK(4K) : ALIGN(4K)
-    {
-        *(.data)
-    }
-
-    .bss BLOCK(4K) : ALIGN(4K)
-    {
-        *(COMMON)
-        *(.bss)
-    }
-}
-
-/* vim: ft=ld ts=4 sts=4 sw=4 et ai cin */
+// vim: ft=c ts=4 sts=4 sw=4 et ai cin

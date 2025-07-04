@@ -1,4 +1,4 @@
-/* stdbool.h
+/* memset.c
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STDBOOL_H
-#define _STDBOOL_H
-#endif /* #ifndef _STDBOOL_H */
+#include <string.h>
+
+void *memset(void *mem, int val, size_t len)
+{
+    register size_t i;
+    for (i = 0; i < len; ++i)
+        (( char * )mem)[i] = val;
+    return mem;
+}
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin
