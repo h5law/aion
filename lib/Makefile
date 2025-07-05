@@ -7,8 +7,8 @@ else
 endif
 ifeq ($(ARCHDIR),arm64)
 	ARCHDIR = aarch64
-else ifeq ($(ARCHDIR),x86_64)
-	ARCHDIR = amd64
+else ifeq ($(ARCHDIR),amd64)
+	ARCHDIR = x86_64
 else ifeq ($(ARCHDIR),i386)
 	ARCHDIR = x86
 else

@@ -52,14 +52,18 @@ int printf(const char *restrict format, ...)
     int written = 0;
 
     while (*format != '\0') {
-        size_t maxrem = INT_MAX - written;
+        size_t maxrem  = INT_MAX - written;
+        size_t padding = 4;
+        char   pad     = '0';
 
         if (format[0] != '%' || format[1] == '%') {
             if (format[0] == '%')
                 format++;
             size_t amount = 1;
-            while (format[amount] && format[amount] != '%')
+            while (format[amount] && format[amount] != '%') {
                 amount++;
+            }
+
             if (maxrem < amount) {
                 // TODO: Set errno to EOVERFLOW.
                 return -1;
@@ -125,6 +129,36 @@ int printf(const char *restrict format, ...)
             written += len;
         }
 
+        else if (*format == 'l') {
+            format++;
+            long n                     = va_arg(parameters, long);
+            char buf[sizeof(long) * 8] = {0};
+            ltoa(n, ( char * )buf, 10);
+            size_t len = strlen(buf);
+            if (maxrem < len) {
+                // TODO: Set errno to EOVERFLOW.
+                return -1;
+            }
+            if (!print(buf, len))
+                return -1;
+            written += len;
+        }
+
+        else if (*format == 'u') {
+            format++;
+            unsigned int n = va_arg(parameters, unsigned int);
+            char         buf[sizeof(unsigned int) * 8] = {0};
+            itoa(n, ( char * )buf, 10);
+            size_t len = strlen(buf);
+            if (maxrem < len) {
+                // TODO: Set errno to EOVERFLOW.
+                return -1;
+            }
+            if (!print(buf, len))
+                return -1;
+            written += len;
+        }
+
         else if (*format == 'o') {
             format++;
             int  n                    = va_arg(parameters, int);
@@ -150,8 +184,12 @@ int printf(const char *restrict format, ...)
                 // TODO: Set errno to EOVERFLOW.
                 return -1;
             }
+            for (size_t i = 0; i < len % padding; ++i)
+                if (!print(&pad, 1))
+                    return -1;
             if (!print(buf, len))
                 return -1;
+            len     += len % padding;
             written += len;
         }
 
@@ -165,8 +203,12 @@ int printf(const char *restrict format, ...)
                 // TODO: Set errno to EOVERFLOW.
                 return -1;
             }
+            for (size_t i = 0; i < len % padding; ++i)
+                if (!print(&pad, 1))
+                    return -1;
             if (!print(buf, len))
                 return -1;
+            len     += len % padding;
             written += len;
         }
 

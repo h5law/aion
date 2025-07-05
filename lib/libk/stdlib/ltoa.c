@@ -1,4 +1,4 @@
-/* abort.c
+/* ltoa.c
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,14 +29,33 @@
  */
 
 #include <stdlib.h>
-#include <stdio.h>
 
-__attribute__((__noreturn__)) void abort(void)
+char *ltoa(long n, char *str, int base)
 {
-    printf("[kernel]: panic: abort()\n");
-    asm volatile("hlt");
-    while (1) {
+    long i          = 0;
+    int  isNegative = FALSE;
+
+    if (n == 0) {
+        str[i++] = '0';
+        str[i]   = '\0';
+        return str;
     }
+    if (n < 0 && base == 10) {
+        isNegative = TRUE;
+        n          = -n;
+    }
+    while (n != 0) {
+        int rem   = n % base;
+        str[i++]  = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+        ldiv_t dt = ldiv(n, base);
+        n         = dt.quot;
+    }
+    if (isNegative)
+        str[i++] = '-';
+    str[i] = '\0';
+    reverse(str, i);
+
+    return str;
 }
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

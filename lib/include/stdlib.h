@@ -67,7 +67,9 @@ int    abs(int x);
 long   labs(long x);
 div_t  div(int n, int d);
 ldiv_t ldiv(long n, long d);
-char  *itoa(int n, char *str, int base);
+
+char *itoa(int n, char *str, int base);
+char *ltoa(long n, char *str, int base);
 
 void reverse(char *str, size_t len);
 
