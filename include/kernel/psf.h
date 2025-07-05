@@ -1,4 +1,4 @@
-/* vga.h
+/* psf.h
  * Copyright 2025 h5law <dev@h5law.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,55 +28,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _KERNEL_VGA_H
-#define _KERNEL_VGA_H
+#ifndef _KERNEL_PSF_H
+#define _KERNEL_PSF_H
 
-#include <stddef.h>
 #include <stdint.h>
 
-enum vga_colour {
-    VGA_COLOUR_BLACK         = 0,
-    VGA_COLOUR_BLUE          = 1,
-    VGA_COLOUR_GREEN         = 3,
-    VGA_COLOUR_CYAN          = 4,
-    VGA_COLOUR_RED           = 5,
-    VGA_COLOUR_MAGENTA       = 6,
-    VGA_COLOUR_BROWN         = 7,
-    VGA_COLOUR_LIGHT_GRAY    = 8,
-    VGA_COLOUR_LIGHT_BLUE    = 9,
-    VGA_COLOUR_LIGHT_GREEN   = 10,
-    VGA_COLOUR_LIGHT_CYAN    = 11,
-    VGA_COLOUR_LIGHT_RED     = 12,
-    VGA_COLOUR_LIGHT_MAGENTA = 13,
-    VGA_COLOUR_LIGHT_BROWN   = 14,
-    VGA_COLOUR_WHITE         = 15,
+#define PSF1_MAGIC 0x3604
+#define PSF1_WIDTH 0x01
+
+enum psf1_font_mode {
+    PSF1_MODE512    = ( uint8_t )0x01,
+    PSF1_MODEHASTAB = ( uint8_t )0x02,
+    PSF1_MODESEQ    = ( uint8_t )0x04,
 };
 
-static inline uint8_t vga_entry_colour(enum vga_colour fg, enum vga_colour bg)
-{
-    return fg | (bg << 4);
-}
+typedef struct {
+    uint16_t            magic;
+    enum psf1_font_mode font_mode;
+    uint8_t             glyph_size;
+} psf1_header_t;
 
-static inline uint16_t vga_entry(unsigned char c, uint8_t colour)
-{
-    return ( uint16_t )c | (( uint16_t )colour << 8);
-}
+int pfs_puts(const char *str);
 
-void vga_init(void);
-void vga_clear(void);
-void vga_set_addr(uint16_t *);
-
-void vga_setcolour(uint8_t fg, uint8_t bg);
-
-void vga_scroll(int line);
-void vga_delete_line(int line);
-void vga_delete_last_line(void);
-
-void vga_putentry(unsigned char c, uint8_t colour, size_t x, size_t y);
-void vga_putchar(char c);
-void vga_write(const char *data, size_t size);
-void vga_writes(const char *data);
-
-#endif /* _KERNEL_VGA_H */
+#endif /* _KERNEL_PSF_H */
 
 // vim: ft=c ts=4 sts=4 sw=4 et ai cin

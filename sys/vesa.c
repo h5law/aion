@@ -291,25 +291,29 @@ void available_modes(void)
 {
     uintptr_t p;
     if (!get_vbe_info()) {
-        // TODO: kprintf
-        return;
+        printf("[vbe] No VESA VBE detected\n");
+        abort();
     }
+    printf("[vbe] VESA VBE Version %d.%d detected (%s)\n\n",
+           VBE_INFO_BLOCK.vbe_version >> 8, VBE_INFO_BLOCK.vbe_version & 0xF,
+           ( char * )VBE_INFO_BLOCK.oem_product_name_ptr);
+    printf("[vbe] Available 256 color video modes:\n");
     for (p = VBE_INFO_BLOCK.video_mode_ptr; p != ( unsigned )-1; ++p) {
         if (get_vbe_mode_info(( vbe_mode_num_t )p))
-            continue;
-        // TODO:  kprintf
+            printf("        - %4d x %4d %d bits per pixel\n",
+                   MODE_INFO_BLOCK.x_resolution, MODE_INFO_BLOCK.y_resolution,
+                   MODE_INFO_BLOCK.bits_per_pixel);
     }
-    // TODO: kprintf
     return;
 }
 
 /* Initialize the specified video mode. Determine a shift factor for adjusting
  * the Window granularity for bank switching. Much faster than a multiply */
-void init_vbe(uint32_t x, uint32_t y)
+void init_vbe(uint32_t x, uint32_t y, uintptr_t addr)
 {
     uintptr_t p;
     if (!get_vbe_info()) {
-        printf("[kaion] No VESA VBE detected\n");
+        printf("[vbe] No VESA VBE detected\n");
         abort();
     }
     for (p = VBE_INFO_BLOCK.video_mode_ptr; p != ( unsigned )-1; ++p) {
@@ -325,13 +329,13 @@ void init_vbe(uint32_t x, uint32_t y)
                 bank_shift++;
             bank_switch  = ( void * )( uintptr_t )MODE_INFO_BLOCK.win_func_ptr;
             current_bank = -1;
-            screen_ptr   = ( uint32_t * )0xe0000000;
+            screen_ptr   = ( uint32_t * )addr;
             old_mode     = get_vbe_mode();
             set_vbe_mode(( vbe_mode_num_t )p);
             return;
         }
     }
-    printf("[kaion] Valid video mode not found\n");
+    printf("[vbe] Valid video mode not found\n");
     abort();
 }
 

@@ -531,7 +531,7 @@ void put_pixel(uint32_t x, uint32_t y, uint32_t colour);
 void line(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t colour);
 void draw_moire(void);
 void available_modes(void);
-void init_vbe(uint32_t x, uint32_t y);
+void init_vbe(uint32_t x, uint32_t y, uintptr_t addr);
 
 /* Plenary mode specific reference functions */
 int            outp(uint16_t port, uint16_t data_byte);
