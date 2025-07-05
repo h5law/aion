@@ -627,7 +627,9 @@ uint8_t font[] = {
 size_t font_len   = 7050;
 size_t font_count = 512;
 
-extern struct multiboot_tag_framebuffer *tagfb;
+volatile uint32_t *framebuffer;
+size_t             framebuffer_pitch;
+size_t             framebuffer_bpp;
 
 int pfs_puts(const char *str)
 {
@@ -647,47 +649,46 @@ int pfs_puts(const char *str)
                 ( uint8_t * )font +
                 (sizeof(h) +
                  ((*str > 0 && *str < font_count) ? *str : 0) * PSF1_WIDTH);
-        offset = (dx + (PSF1_WIDTH * tagfb->common.framebuffer_pitch));
+        offset = (dx + (PSF1_WIDTH * framebuffer_pitch));
         for (y = 0; y < height; ++y) {
             line = offset;
             mask = 1 << (PSF1_WIDTH - 1);
             for (x = 0; x < strlen(str); ++x) {
-                switch (tagfb->common.framebuffer_bpp) {
+                switch (framebuffer_bpp) {
                 case 8: {
-                    multiboot_uint8_t *pixel =
-                            ( void * )tagfb->common.framebuffer_addr +
-                            tagfb->common.framebuffer_pitch * line + line;
+                    multiboot_uint8_t *pixel = ( void * )framebuffer +
+                                               framebuffer_pitch * line + line;
                     *pixel = colour;
                 } break;
                 case 15:
                 case 16: {
-                    multiboot_uint16_t *pixel =
-                            ( void * )tagfb->common.framebuffer_addr +
-                            tagfb->common.framebuffer_pitch * line + 2 * x;
+                    multiboot_uint16_t *pixel = ( void * )framebuffer +
+                                                framebuffer_pitch * line +
+                                                2 * x;
                     *pixel = (*pixel & colour) |
                              (*pixel & (mask ? 0xFFFFFF : 0));
                 } break;
                 case 24: {
-                    multiboot_uint32_t *pixel =
-                            ( void * )tagfb->common.framebuffer_addr +
-                            tagfb->common.framebuffer_pitch * line + 3 * x;
+                    multiboot_uint32_t *pixel = ( void * )framebuffer +
+                                                framebuffer_pitch * line +
+                                                3 * x;
                     *pixel = (*pixel & colour) |
                              (*pixel & (mask ? 0xFFFFFF : 0));
                 } break;
                 case 32: {
-                    multiboot_uint32_t *pixel =
-                            ( void * )tagfb->common.framebuffer_addr +
-                            tagfb->common.framebuffer_pitch * line + 4 * x;
+                    multiboot_uint32_t *pixel = ( void * )framebuffer +
+                                                framebuffer_pitch * line +
+                                                4 * x;
                     *pixel = (*pixel & colour) |
                              (*pixel & (mask ? 0xFFFFFF : 0));
                 } break;
                 }
                 mask >>= 1;
-                line  += tagfb->common.framebuffer_pitch;
+                line  += framebuffer_pitch;
             }
-            *(( uint32_t * )tagfb->common.framebuffer_addr + line) = 0;
-            glyph  += PSF1_WIDTH;
-            offset += tagfb->common.framebuffer_bpp;
+            *(( uint32_t * )framebuffer + line)  = 0;
+            glyph                               += PSF1_WIDTH;
+            offset                              += framebuffer_bpp;
         }
         ++str;
         ++dx;
