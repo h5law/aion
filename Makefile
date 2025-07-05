@@ -7,8 +7,8 @@ else
 endif
 ifeq ($(ARCHDIR),arm64)
 	ARCHDIR = aarch64
-else ifeq ($(ARCHDIR),x86_64)
-	ARCHDIR = amd64
+else ifeq ($(ARCHDIR),amd64)
+	ARCHDIR = x86_64
 else ifeq ($(ARCHDIR),i386)
 	ARCHDIR = x86
 else
@@ -40,7 +40,7 @@ KERN_OBJS = $(KERN_SRCS:.c=.o)
 OBJS = \
 			$(BOOTDIR)/$(ARCHDIR)/crti.o \
 			$(BOOTDIR)/$(ARCHDIR)/crtbegin.o \
-			$(BOOTDIR)/boot.o \
+			$(BOOTDIR)/$(ARCHDIR)/boot.o \
 			$(KERN_OBJS) \
 			$(BOOTDIR)/$(ARCHDIR)/crtend.o \
 			$(BOOTDIR)/$(ARCHDIR)/crtn.o
@@ -67,8 +67,8 @@ $(BOOTDIR)/$(ARCHDIR)/crtbegin.o $(BOOTDIR)/$(ARCHDIR)/crtend.o:
 	OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
 
 $(TARGET): $(OBJS)
-	$(CC) -T linker.ld $(CFLAGS) -Wl,--verbose -o $(TARGET) $(OBJS) $(LDFLAGS)
-	grub-file --is-x86-multiboot $(TARGET)
+	$(CC) -T linker.ld $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
+	grub-file --is-x86-multiboot2 $(TARGET)
 
 build: $(TARGET)
 
@@ -77,3 +77,14 @@ grub: $(TARGET)
 	cp $(TARGET) iso/boot
 	cp grub.cfg iso/boot/grub/grub.cfg
 	grub-mkrescue -o $(OS).iso iso
+
+qemu: grub
+	qemu-system-i386                                     \
+		  -accel tcg,thread=single                       \
+		  -cpu core2duo                                  \
+		  -m 128                                         \
+		  -drive format=raw,media=cdrom,file=aion.iso    \
+		  -serial stdio                                  \
+		  -smp 1                                         \
+		  -usb                                           \
+		  -vga std

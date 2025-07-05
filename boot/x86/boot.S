@@ -1,0 +1,105 @@
+/* boot.S
+ * Copyright 2025 h5law <dev@h5law.com>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#define  ASM_FILE        1
+#include <kernel/x86/multiboot2.h>
+
+        .section        .text
+        .global         _start
+        .type           _start,     @function
+_start:
+        jmp             multiboot_entry
+
+        .align          MULTIBOOT_HEADER_ALIGN
+multiboot_header:
+        .long           MULTIBOOT2_HEADER_MAGIC
+        .long           MULTIBOOT_ARCHITECTURE_I386
+        .long           (multiboot_header_end - multiboot_header)
+        .long           -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (multiboot_header_end - multiboot_header))
+entry_address_tag_start:
+        .short          MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS
+        .short          MULTIBOOT_HEADER_TAG_OPTIONAL
+        .long           entry_address_tag_end - entry_address_tag_start
+        .long           multiboot_entry
+entry_address_tag_end:
+/*  framebuffer_tag_start: */
+/*          .short          MULTIBOOT_HEADER_TAG_FRAMEBUFFER */
+/*          .short          MULTIBOOT_HEADER_TAG_OPTIONAL */
+/*          .long           framebuffer_tag_end - framebuffer_tag_start */
+/*          .long           720 */
+/*          .long           480 */
+/*          .long           24 */
+/*  framebuffer_tag_end: */
+        .short          MULTIBOOT_HEADER_TAG_END
+        .long           0
+        .long           8
+multiboot_header_end:
+multiboot_entry:
+        movl            $stack_top,                 %esp
+
+        pushl           $0
+        popf
+
+        pushl           %ebx                        /* Multiboot2 info structure pointer */
+        pushl           %eax                        /* Multiboot2 magic number */
+        call            kernel_entry
+
+        pushl           $halt_msg
+        call            printf
+        addl            $4,                         %esp
+.halt:
+        cli
+        hlt
+        jmp             .halt
+        .size           _start,                     . - _start;
+
+        .section        .bss
+        .align          16
+stack_bottom:
+        .skip           16384                       /* 16KB stack */
+stack_top:
+
+        .section        .rodata
+eflags_msg:
+        .asciz          "[boot] clearing eflags registers\r\n"
+boot_msg:
+        .asciz          "[boot] multiboot2 kernel starting...\r\n"
+not_multiboot_msg:
+        .asciz          "[error] Not loaded by Multiboot2 bootloader!\r\n"
+state_ok_msg:
+        .asciz          "[boot] Machine state verification passed\r\n"
+state_error_msg:
+        .asciz          "[error] Machine state verification failed!\r\n"
+kernel_msg:
+        .asciz          "[kernel] Kernel entrypoint called\r\n"
+halt_msg:
+        .asciz          "[boot] Kernel returned, halting system\r\n"
+
+/* vim: ft=asm ts=4 sts=4 sw=4 et ai cin */

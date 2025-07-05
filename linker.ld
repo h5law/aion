@@ -33,40 +33,74 @@ ENTRY(_start)
 PHDRS
 {
     text    PT_LOAD FLAGS(5); /* Read + Execute (RX) */
-    rodata  PT_LOAD FLAGS(4); /* Read-only (R) */
-    data    PT_LOAD FLAGS(6); /* Read + Write (RW) */
-    bss     PT_LOAD FLAGS(6); /* Read + Write (RW) */
+    rodata  PT_LOAD FLAGS(4); /* Read-only      (RO) */
+    data    PT_LOAD FLAGS(6); /* Read + Write   (RW) */
+    bss     PT_LOAD FLAGS(6); /* Read + Write   (RW) */
 }
 
 SECTIONS
 {
-    . = 2M; /* Kernel Entru point */
+    . = 2M;
 
-    .vectors : {
-        *(.vectors*) /* Exception vector table */
+    .boot BLOCK(4K) : ALIGN(4K)
+    {
+        KEEP(*(.multiboot_header))
+        KEEP(*(.boot))
+    } :text
+
+    .vectors BLOCK(4K) : ALIGN(4K)
+    {
+        KEEP(*(.vectors .vectors.*))
     } :text
 
     .text BLOCK(4K) : ALIGN(4K)
     {
-        *(.multiboot)
-        *(.text)
-    }
+        . = ALIGN(4);
+        KEEP(*(.init))
+        . = ALIGN(4);
+        __preinit_array_start = .;
+        KEEP (*(.preinit_array))
+        __preinit_array_end = .;
+
+        . = ALIGN(4);
+        __init_array_start = .;
+        KEEP (*(SORT(.init_array.*)))
+        KEEP (*(.init_array))
+        __init_array_end = .;
+
+        . = ALIGN(4);
+        KEEP(*(.fini))
+
+        . = ALIGN(4);
+        __fini_array_start = .;
+        KEEP (*(.fini_array))
+        KEEP (*(SORT(.fini_array.*)))
+        __fini_array_end = .;
+
+        . = ALIGN(4);
+        KEEP (*crtbegin.o(.ctors))
+        KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
+        KEEP (*(SORT(.ctors.*)))
+        KEEP (*crtend.o(.ctors))
+
+        KEEP(*(.text))
+    } :text
 
     .rodata BLOCK(4k) : ALIGN(4K)
     {
         *(.rodata)
-    }
+    } :rodata
 
     .data BLOCK(4K) : ALIGN(4K)
     {
         *(.data)
-    }
+    } :data
 
     .bss BLOCK(4K) : ALIGN(4K)
     {
         *(COMMON)
         *(.bss)
-    }
+    } :bss
 }
 
 /* vim: ft=ld ts=4 sts=4 sw=4 et ai cin */

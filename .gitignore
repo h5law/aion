@@ -5,3 +5,4 @@ build/
 *.kernel
 *.d
 *.iso
+*.a
