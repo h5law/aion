@@ -13,6 +13,8 @@ else ifeq ($(ARCHDIR),i386)
 	ARCHDIR = x86
 else ifeq ($(ARCHDIR),i686)
 	ARCHDIR = x86
+else ifeq ($(ARCHDIR),x86_64)
+	ARCHDIR = x86
 else
 	$(error "Unsupported architecture: $(ARCH)")
 endif
@@ -40,12 +42,8 @@ KERN_SRCS = $(foreach dir,$(KERNDIR),$(wildcard $(dir)/*.c))
 KERN_OBJS = $(KERN_SRCS:.c=.o)
 
 OBJS = \
-			$(BOOTDIR)/$(ARCHDIR)/crti.o \
-			$(BOOTDIR)/$(ARCHDIR)/crtbegin.o \
 			$(BOOTDIR)/$(ARCHDIR)/boot.o \
 			$(KERN_OBJS) \
-			$(BOOTDIR)/$(ARCHDIR)/crtend.o \
-			$(BOOTDIR)/$(ARCHDIR)/crtn.o
 
 OS = aion
 TARGET = $(OS)-$(ARCHDIR).kernel
