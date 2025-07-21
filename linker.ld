@@ -46,16 +46,18 @@ SECTIONS
 {
     . = 0x00100000;
 
-	_kernel_start = .;
-    .multiboot.data : {
+    _kernel_start = .;
+    .multiboot.data :
+    {
         KEEP(*(.multiboot.data))
     } :mdata
 
-   .multiboot.text : {
+    multiboot.text :
+    {
        KEEP(*(.multiboot.text))
-   } :mtext
+    } :mtext
 
-	. += 0xC0000000;
+    . += 0xC0000000;
 	.text ALIGN (4K) : AT (ADDR (.text) - 0xC0000000)
 	{
         . = ALIGN(4);
@@ -91,19 +93,19 @@ SECTIONS
 
 	.rodata ALIGN (4K) : AT (ADDR (.rodata) - 0xC0000000)
 	{
-		*(.rodata .rodata.*)
+		KEEP(*(.rodata .rodata.*))
 	} :rodata
 
 	.data ALIGN (4K) : AT (ADDR (.data) - 0xC0000000)
 	{
-		*(.data .data.*)
+		KEEP(*(.data .data.*))
 	} :data
 
 	.bss ALIGN (4K) : AT (ADDR (.bss) - 0xC0000000)
 	{
-		*(COMMON)
-		*(.bss .bss.*)
-		*(.bootstrap_stack)
+		KEEP(*(COMMON))
+		KEEP(*(.bss .bss.*))
+		KEEP(*(.bootstrap_stack))
 	} :bss
 	_kernel_end = .;
 }

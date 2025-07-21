@@ -35,7 +35,7 @@
 #include <kernel/vga.h>
 
 static const size_t       VGA_WIDTH  = 80;
-static const size_t       VGA_HEIGHT = 24;
+static const size_t       VGA_HEIGHT = 25;
 static volatile uint16_t *VGA_MEMORY = ( uint16_t * )0xC03FF000;
 
 static volatile uint16_t *vga_buffer;
@@ -94,92 +94,92 @@ void vga_delete_line(int line)
 
 void vga_delete_last_line(void) { vga_delete_line(VGA_HEIGHT - 1); }
 
-void vga_special_character(char c)
-{
-    size_t line;
-
-    switch (c) {
-    case '\0': /* Null character (0x00) */
-        break;
-
-    case '\a': /* Bell (0x07) */
-        /* Visual bell - ignore */
-        break;
-
-    case '\b': /* Backspace (0x08) */
-        if (vga_column > 0) {
-            vga_column--;
-            vga_putentry(' ', vga_colour, vga_column, vga_row);
-        } else if (vga_row > 0) {
-            vga_row--;
-            vga_column = VGA_WIDTH - 1;
-            while (vga_column > 0 &&
-                   vga_buffer[(vga_column * VGA_WIDTH) + vga_row] == ' ') {
-                vga_column--;
-            }
-            if (vga_buffer[(vga_column * VGA_WIDTH) + vga_row] != ' ') {
-                vga_column++;
-            }
-        }
-        break;
-
-    case '\t': /* Tab (0x09) */
-        do {
-            vga_putchar(' ');
-        } while (vga_column % 8 != 0);
-        break;
-
-    case '\n': /* Line Feed (0x0A) */
-        vga_column = 0;
-        if (++vga_row == VGA_HEIGHT) {
-            for (line = 1; line < VGA_HEIGHT; ++line)
-                vga_scroll(line);
-            vga_delete_last_line();
-            vga_row = VGA_HEIGHT - 1;
-        }
-        break;
-
-    case '\v': /* Vertical Tab (0x0B) */
-        if (++vga_row >= VGA_HEIGHT) {
-            for (line = 1; line < VGA_HEIGHT; ++line)
-                vga_scroll(line);
-            vga_delete_last_line();
-            vga_row = VGA_HEIGHT - 1;
-        }
-        break;
-
-    case '\f': /* Form Feed (0x0C) */
-        /* Clear screen and move to top-left */
-        vga_clear();
-        vga_row    = 0;
-        vga_column = 0;
-        break;
-
-    case '\r': /* Carriage Return (0x0D) */
-        vga_column = 0;
-        break;
-
-    case 0x1B: /* Escape (0x1B) */
-        // TODO: Could be start of ANSI escape sequences? Ignore currently
-        break;
-
-    default:
-        /* Display as visible control character */
-        if (c >= 0x01 && c <= 0x1F) {
-            vga_putchar('^');
-            vga_putchar('A' + c - 1); /* ^A for 0x01, ^B for 0x02, etc. */
-        }
-        break;
-    }
-}
+// void vga_special_character(char c)
+// {
+//     size_t line;
+//
+//     switch (c) {
+//     case '\0': /* Null character (0x00) */
+//         break;
+//
+//     case '\a': /* Bell (0x07) */
+//         /* Visual bell - ignore */
+//         break;
+//
+//     case '\b': /* Backspace (0x08) */
+//         if (vga_column > 0) {
+//             vga_column--;
+//             vga_putentry(' ', vga_colour, vga_column, vga_row);
+//         } else if (vga_row > 0) {
+//             vga_row--;
+//             vga_column = VGA_WIDTH - 1;
+//             while (vga_column > 0 &&
+//                    vga_buffer[(vga_column * VGA_WIDTH) + vga_row] == ' ') {
+//                 vga_column--;
+//             }
+//             if (vga_buffer[(vga_column * VGA_WIDTH) + vga_row] != ' ') {
+//                 vga_column++;
+//             }
+//         }
+//         break;
+//
+//     case '\t': /* Tab (0x09) */
+//         do {
+//             vga_putchar(' ');
+//         } while (vga_column % 8 != 0);
+//         break;
+//
+//     case '\n': /* Line Feed (0x0A) */
+//         vga_column = 0;
+//         if (++vga_row == VGA_HEIGHT) {
+//             for (line = 1; line < VGA_HEIGHT; ++line)
+//                 vga_scroll(line);
+//             vga_delete_last_line();
+//             vga_row = VGA_HEIGHT - 1;
+//         }
+//         break;
+//
+//     case '\v': /* Vertical Tab (0x0B) */
+//         if (++vga_row >= VGA_HEIGHT) {
+//             for (line = 1; line < VGA_HEIGHT; ++line)
+//                 vga_scroll(line);
+//             vga_delete_last_line();
+//             vga_row = VGA_HEIGHT - 1;
+//         }
+//         break;
+//
+//     case '\f': /* Form Feed (0x0C) */
+//         /* Clear screen and move to top-left */
+//         vga_clear();
+//         vga_row    = 0;
+//         vga_column = 0;
+//         break;
+//
+//     case '\r': /* Carriage Return (0x0D) */
+//         vga_column = 0;
+//         break;
+//
+//     case 0x1B: /* Escape (0x1B) */
+//         // TODO: Could be start of ANSI escape sequences? Ignore currently
+//         break;
+//
+//     default:
+//         /* Display as visible control character */
+//         if (c >= 0x01 && c <= 0x1F) {
+//             vga_putchar('^');
+//             vga_putchar('A' + c - 1); /* ^A for 0x01, ^B for 0x02, etc. */
+//         }
+//         break;
+//     }
+// }
 
 void vga_putchar(char c)
 {
     size_t line;
-    if (c <= 0x1F) {
-        vga_special_character(c);
-        return;
-    }
+    // if (c <= 0x1F) {
+    //     vga_special_character(c);
+    //     return;
+    // }
     vga_putentry(( unsigned char )c, vga_colour, vga_column, vga_row);
     if (++vga_column == VGA_WIDTH) {
         vga_column = 0;

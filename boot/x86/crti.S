@@ -32,16 +32,16 @@
     .global     _init
     .type       _init,  @function
 _init:
-    push    %ebp
-    movl    %esp,   %ebp
+    pushl       %ebp
+    movl        %esp,   %ebp
     /* crtbegin.o: .init section here */
 
     .section    .fini
     .global     _fini
     .type       _init,  @function
 _fini:
-    push    %ebp
-    movl    %esp,   %ebp
+    pushl       %ebp
+    movl        %esp,   %ebp
     /* crtbegin.o: .fini section here */
 
 /* vim: ft=asm ts=4 sts=4 sw=4 et ai cin */

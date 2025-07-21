@@ -15,7 +15,7 @@
  * may be used to endorse or promote products derived from this software without
  * specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
@@ -56,11 +56,12 @@ int printf(const char *restrict format, ...)
         size_t padding = 4;
         char   pad     = '0';
 
-        if (format[0] != '%' || format[1] == '%') {
-            if (format[0] == '%')
+        char percent   = '%'; /* Avoid .rodata.printf access */
+        if (format[0] != percent || format[1] == percent) {
+            if (format[0] == percent)
                 format++;
             size_t amount = 1;
-            while (format[amount] && format[amount] != '%') {
+            while (format[amount] && format[amount] != percent) {
                 amount++;
             }
 
@@ -102,14 +103,13 @@ int printf(const char *restrict format, ...)
             written += len;
         }
 
-        else if (*format == '%') {
+        else if (*format == percent) {
             format++;
             if (!maxrem) {
                 // TODO: Set errno to EOVERFLOW.
                 return -1;
             }
-            char c = '%';
-            if (!print(&c, sizeof(c)))
+            if (!print(&percent, sizeof(percent)))
                 return -1;
             written++;
         }

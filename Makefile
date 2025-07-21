@@ -22,7 +22,7 @@ endif
 DIAG = -Wall -Wextra -Wpedantic
 OFLAGS = -O2
 
-CFLAGS ?= $(OFLAGS) $(DIAG) -g
+CFLAGS ?= $(OFLAGS) $(DIAG) -mcmodel=large -g
 CPPFLAGS ?=
 LDFLAGS ?=
 LIBS ?=
@@ -50,7 +50,7 @@ TARGET = $(OS)-$(ARCHDIR).kernel
 
 .PHONY: all build clean grub
 
-all: build grub
+all: clean build grub qemu
 
 clean:
 	rm -frd $(TARGET) $(OS).iso iso/
@@ -79,7 +79,7 @@ grub: $(TARGET)
 	grub-mkrescue -o $(OS).iso iso
 
 qemu: grub
-	qemu-system-i386                                     \
+	qemu-system-x86_64                                   \
 		  -accel tcg,thread=single                       \
 		  -cpu core2duo                                  \
 		  -m 128                                         \

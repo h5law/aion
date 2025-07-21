@@ -30,13 +30,14 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <kernel/vesa.h>
 
 #include <stdio.h>
 
-struct vbe_info_block_t  VBE_INFO_BLOCK  = {0};
-struct mode_info_block_t MODE_INFO_BLOCK = {0};
+static struct vbe_info_block_t  VBE_INFO_BLOCK  = {0};
+static struct mode_info_block_t MODE_INFO_BLOCK = {0};
 
 uint32_t       x_resolution   = 0; /* Resolution of video mode used */
 uint32_t       y_resolution   = 0; /* in width (x) and height (y) */
@@ -86,8 +87,9 @@ int get_vbe_mode_info(vbe_mode_num_t mode)
     if (mode < 0x100)
         return 0;
 
-    for (size_t i = 0; i < sizeof(struct mode_info_block_t); ++i)
-        *(( uint8_t * )&MODE_INFO_BLOCK + i) = 0;
+    uint8_t zero = 0;
+    memmove(( uint8_t * )&MODE_INFO_BLOCK, ( uint8_t * )&zero,
+            sizeof(struct mode_info_block_t) * sizeof(uint8_t));
 
     __asm__ volatile(
             "int $0x10"

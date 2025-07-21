@@ -40,104 +40,305 @@ multiboot_header:
         .long           8
 multiboot_header_end:
 
-        .section        .bootstrap_stack, "aw", @nobits
+        .section        .bootstrap_stack, "aw", "nobits"
         .align          16
 stack_bottom:
         .skip           16384
 stack_top:
 
-        .section        .bss, "aw", @nobits
-        .align          4096
-boot_page_directory:
-        .skip 4096
-boot_page_table1:
-        .skip 4096
+        .section        .bss, "aw", "nobits"
+        .align 4
+IDT:
+    .Length:
+        .word           0
+    .Base:
+        .long           0
 
-        .section        .rodata
-eflags_msg:
-        .asciz          "[boot] clearing eflags registers\r\n"
-boot_msg:
-        .asciz          "[boot] multiboot2 kernel starting...\r\n"
-not_multiboot_msg:
-        .asciz          "[error] Not loaded by Multiboot2 bootloader!\r\n"
-state_ok_msg:
-        .asciz          "[boot] Machine state verification passed\r\n"
-state_error_msg:
-        .asciz          "[error] Machine state verification failed!\r\n"
-kernel_msg:
-        .asciz          "[kernel] Kernel entrypoint called\r\n"
-halt_msg:
-        .asciz          "[boot] Kernel returned, halting system\r\n"
+        .equ            CR0_PAGING, 1 << 31
+        .equ            PT_SIZE, 4096
+        .equ            PML4T_ADDR, 0x1000
+        .equ            PDPT_ADDR, 0x2000
+        .equ            PDT_ADDR, 0x3000
+        .equ            PT_ADDR, 0x4000
+
+        .equ            PT_ADDR_MASK, 0xFFFFFFFFFF000
+        .equ            PT_PRESENT, 1
+        .equ            PT_READABLE, 2
+
+        .equ            PT_ENTRIES, 512
+        .equ            PT_ENTRY_SIZE, 8
+        .equ            PAGE_SIZE, 0x1000
+
+        .equ            CR4_PAE_ENABLE, 1 << 5
+
+        .equ            EFER_MSR, 0xC0000080
+        .equ            EFER_LM_ENABLE, 1 << 8
+
+        .equ            CR0_PM_ENABLE, 1 << 0
+        .equ            CR0_WB_ENABLE, 1 << 5
+        .equ            CR0_PG_ENABLE, 1 << 31
 
         .section        .multiboot.text, "aw"
+        .code32
         .global         _start
         .type           _start,     @function
 _start:
-        /* Physical address of boot_page_table1 */
-        movl            $(boot_page_table1 - 0xC0000000), %edi
-        /* Map 0 address */
-        movl            $0, %esi
-        movl            $1023, %ecx
+        xorw            %ax, %ax
+        movw            %dx, %ax
+        movw            %es, %ax
+        movw            %si, %ax
+        movw            %sp, 0x7C00
 
+        /* Call print_real for debug */
+        xorl            %eax, %eax
+        movl            %eax, 0xb800
+        movl            %es, %eax
+        movl            %es:0, 0x41
+        movl            %es:1, 0x1f
+
+        /* Enable A20 line */
+        mov             %al, 0x92
+        mov             %al, 2
+        mov             0x92, %al
+
+        /* Transition to 32-bit protected mode (simplified) */
+        movl            %cr0, %eax
+        orl             $CR0_PM_ENABLE, %eax
+        movl            %eax, %cr0
+
+        /* Debug */
+        movl            %esi, debug_protected
+        call            print_protected
+
+        /* Disable 32bit paging */
+        movl            %cr0, %eax
+        andl            ~CR0_PAGING, %eax
+        movl            %eax, %cr0
+
+        /* clear the tables */
+        movl            PML4T_ADDR, %edi
+        movl            %cr3, %edi /* Set CR3 telling the CPU where the tables are */
+        xorl            %eax, %eax
+        movl            %ecx, PT_SIZE
+        rep             stosl /* Write 4*PT_SIZE bytes for the 4 tables */
+        movl            %edi, %cr3
+
+        /* Link up first entries of each table */
+        movl            %edi, PML4T_ADDR
+        movl            %edx, PDPT_ADDR & PT_ADDR_MASK | PT_PRESENT | PT_READABLE
+        movl            (%edi), %edx
+        movl            %edi, PDPT_ADDR
+        movl            %edx, PDT_ADDR & PT_ADDR_MASK | PT_PRESENT | PT_READABLE
+        movl            (%edi), %edx
+        movl            %edi, PDT_ADDR
+        movl            %edx, PT_ADDR & PT_ADDR_MASK | PT_PRESENT | PT_READABLE
+        movl            (%edi), %edx
+
+        /* Fill page table */
+        movl            %edi, PT_ADDR
+        movl            $0, %esi
+        movl            %ebx, PT_PRESENT | PT_READABLE
+        movl            %ecx, PT_ENTRIES
 1:
-        /* Map the kernel */
         cmpl            $_kernel_start, %esi
         jl              2f
         cmpl            $(_kernel_end - 0xC0000000), %esi
         jge             3f
 
-        /* Map physical address as present and writable */
         movl            %esi, %edx
-        orl             $0x003, %edx
+        orl             %ebx, %edx
         movl            %edx, (%edi)
 
 2:
-        /* Map boot pages */
-        addl            $4096, %esi
-        addl            $4, %edi
+        addl            PAGE_SIZE, %esi
+        addl            PT_ENTRY_SIZE, %edi
         loop            1b
 
 3:
-        /* Map VGA VM to 0xC03FF000 as present, writable */
-        movl            $(0x000B8000 | 0x003), boot_page_table1 - 0xC0000000 + 1023 * 4
+        /* Memory map the VGA video memory */
+        movl            $PT_ADDR, %edi
+        movl            $(0xB8000 | PT_PRESENT | PT_READABLE), %eax
+        movl            %eax, 0x3FF000 / PT_SIZE * PT_ENTRY_SIZE(%edi)
 
-        /* Identity map the page table to both virtual addresses
-         * 0x00000000 and 0xC0000000 */
-	    movl            $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 0
-	    movl            $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 768 * 4
 
-        /* Set CR3 to the boot page directory */
-        movl            $(boot_page_directory - 0xC0000000), %ecx
-        movl            %ecx, %cr3
+        /* Identity map kernel 0-384 0x0 -> 0x3FFFFF 0xC0000000 -> 0xC03FFFFF */
+        movl            $(PT_ADDR | PT_PRESENT | PT_READABLE), PDT_ADDR - 0xC0000000
+        movl            $(PT_ADDR | PT_PRESENT | PT_READABLE), PDT_ADDR - 0xC0000000 + 384 * PT_ENTRY_SIZE
 
-        /* Enable paging and write protect bit */
-        movl            %cr0, %ecx
-        orl             $0x80010000, %ecx
-        movl            %ecx, %cr0
+        movl            $(PDT_ADDR - 0xC0000000), %eax
+        movl            %eax, %cr3
 
-        /* Jump to higher half kernel (absolute) */
-        lea             4f, %ecx
-        jmp             *%ecx
+        /* Disable IRQs */
+        mov             %al, 0xFF
+        mov             0xA1, %al
+        mov             0x21, %al
+
+        nop
+        nop
+
+        /* Load zero length IDT so any NMI causes triple fault */
+        lidt            IDT
+
+        /* Enable PAE */
+        movl            %eax, %cr4
+        orl             %eax, CR4_PAE_ENABLE
+        movl            %cr4, %eax
+
+        /* Switch to compatability mode */
+        movl            %ecx, EFER_MSR
+        rdmsr
+        orl             %eax, EFER_LM_ENABLE
+        wrmsr
+
+        /* Enable paging and protected mode */
+        movl            %eax, %cr0
+        orl             %eax, CR0_PG_ENABLE | CR0_PM_ENABLE | CR0_WB_ENABLE
+        movl            %cr0, %eax
+
+        .equ            VGA_MEMORY, 0xC03FF000
+        .equ            VGA_HEIGHT, 80
+        .equ            VGA_WIDTH, 25
+        .equ            VGA_BPL, 2
+        .equ            VGA_BUFFER_SIZE, (VGA_HEIGHT * VGA_WIDTH * VGA_BPL)
+        /* Jump to real mode */
+        lgdt            Pointer
+fjt:
+        .quad           real
+        .word           8
+        jmp             *fjt
 
         .section        .text
-4:
-        /* Unmap identity boot page directory mapping */
-        movl            $0, boot_page_directory + 0
+        .code64
+real:
+        cli
 
-        /* Force TBL flush */
-        movl            %cr3, %ecx
-        movl            %ecx, %cr3
+        mov             %ax, Data - 0xC0000000
+        mov             %ds, %ax
+        mov             %es, %ax
+        mov             %fs, %ax
+        mov             %gs, %ax
+        mov             %ss, %ax
 
-        movl            $stack_top,                 %esp
+        /* movq            (VGA_MEMORY), %rdi */
+        /* movq            %rcx, 500 */
+        /* movq            %rax, 0x1F201F201F201F20 */
+        /* rep             stosq */
+
+        /* movq            (VGA_MEMORY), %rdi */
+        /* movq            %rax, 0x1F6C1F6C1F651F48 */
+        /* movq            (%rdi), %rax */
 
         call            kernel_entry
 
-        pushl           $halt_msg
-        call            printf
-        addl            $4,                         %esp
+
         cli
 .halt:
         hlt
-        jmp             1b
+        jmp             .halt
+
+        /* 16-bit real mode print function */
+        .section        .multiboot.text, "aw"
+        .code16
+        .global         print_real
+        .type           print_real, @function
+print_real:
+        /* Input: %esi = null-terminated string */
+        /* Clobbers: %eax, %edi */
+        pushl           %ebp
+        movl            %esp, %ebp
+        pushl           %edi
+        movl            0xB800, %eax
+        movl            %eax, %es
+.Lprint_real_loop:
+        lodsb
+        cmpb            %al, 0
+        je              .Lprint_real_newline
+        movb            %ah, 0x07
+        movl            %es:(%edi), %eax
+        addl            %edi, 2
+        jmp             .Lprint_real_loop
+.Lprint_real_newline:
+        addl            160, %edi
+        popl            %edi
+        popl            %ebp
+        ret
+debug_real:
+        .asciz          "[boot] Real mode"
+
+        /* 32-bit protected mode print function */
+        .code32
+        .global         print_protected
+        .type           print_protected, @function
+print_protected:
+        /* Input: %esi = null-terminated string */
+        /* Clobbers: %eax, %edi */
+        pushl           %ebp
+        movl            %ebp, %esp
+        pushl           %edi
+        movl            %edi, VGA_MEMORY
+        addl            %edi, %eax
+.Lprint_protected_loop:
+        lodsb
+        cmpb            %al, 0
+        je              .Lprint_protected_newline
+        movb            %ah, 0x07
+        movl            (%edi), %eax
+        addl            %edi, 2
+        jmp             .Lprint_protected_loop
+.Lprint_protected_newline:
+        addl            %edi, 160
+        subl            %edi, VGA_MEMORY
+        popl            %edi
+        popl            %ebp
+        ret
+debug_protected:
+        .asciz          "[boot] Protected mode"
+
+        .equ            PRESENT, 1 << 7
+        .equ            NOT_SYS, 1 << 4
+        .equ            EXEC, 1 << 3
+        .equ            DC, 1 << 2
+        .equ            RW, 1 << 1
+        .equ            ACCESSED, 1 << 0
+
+        .equ            GRAN_4K, 1 << 7
+        .equ            SZ_32, 1 << 6
+        .equ            LONG_MODE, 1 << 5
+
+        .section        .data, "aw"
+        .align          8
+        .globl          GDT
+GDT:
+    Null:
+        .quad 0
+    Code:
+        .Code_limit_lo:
+            .word       0xFFFF
+        .Code_base_lo:
+            .word       0
+        .Code_base_mid:
+            .byte       0
+        .Code_access:
+            .byte       PRESENT | NOT_SYS | EXEC | RW
+        .Code_flags:
+            .byte       GRAN_4K | LONG_MODE | 0xF  # Flags & imit (high, bits 16-19)
+        .Code_base_hi:
+            .byte       0
+    Data:
+        .Data_limit_lo:
+            .word       0xFFFF
+        .Data_base_lo:
+            .word       0
+        .Data_base_mid:
+            .byte       0
+        .Data_access:
+            .byte       PRESENT | NOT_SYS | RW
+        .Data_Flags:
+            .byte       GRAN_4K | SZ_32 | 0xF     # Flags & imit (high, bits 16-19)
+        .Data_base_hi:
+            .byte       0
+    Pointer:
+        .word           . - GDT - 1
+        .quad           GDT
 
 /* vim: ft=asm ts=4 sts=4 sw=4 et ai cin */
