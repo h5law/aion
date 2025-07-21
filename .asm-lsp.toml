@@ -1,17 +1,17 @@
 [default_config]
 version = "0.10.0"
-assembler = "nasm"
+assembler = "gas"
 instruction_set = "x86"
 
 [default_config.opts]
-compiler = "i686-unknown-elf-gcc"
+compiler = "x86_64-unknown-elf-gcc"
 compile_flags_txt = [
     "cc",
     "-std=c11",
     "-x",
     "assembler-with-cpp",
     "-target",
-    "i686-unknown-elf",
+    "x86_64-unknown-elf",
     "-nostdinc",
     "-nostdlib",
     "-ffreestanding",
