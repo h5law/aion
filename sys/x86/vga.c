@@ -36,7 +36,7 @@
 
 static const size_t       VGA_WIDTH  = 80;
 static const size_t       VGA_HEIGHT = 24;
-static volatile uint16_t *VGA_MEMORY = ( uint16_t * )0xB8000;
+static volatile uint16_t *VGA_MEMORY = ( uint16_t * )0xC03FF000;
 
 static volatile uint16_t *vga_buffer;
 static size_t             vga_row;

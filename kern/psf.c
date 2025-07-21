@@ -31,7 +31,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <kernel/x86/multiboot2.h>
 #include <kernel/psf.h>
 #include <string.h>
 
@@ -633,16 +632,15 @@ size_t             framebuffer_bpp;
 
 int pfs_puts(const char *str)
 {
-    int                x      = 0;
-    int                y      = 0;
-    int                dx     = 0;
-    int                mask   = 0;
-    size_t             line   = 0;
-    size_t             offset = 0;
-    multiboot_uint32_t colour = 0xFFFFFFFF;
+    int    x             = 0;
+    int    y             = 0;
+    int    dx            = 0;
+    int    mask          = 0;
+    size_t line          = 0;
+    size_t offset        = 0;
 
-    psf1_header_t h           = (( psf1_header_t * )font)[0];
-    size_t        height      = h.glyph_size;
+    psf1_header_t h      = (( psf1_header_t * )font)[0];
+    size_t        height = h.glyph_size;
 
     while (*str) {
         uint8_t *glyph =
@@ -651,41 +649,8 @@ int pfs_puts(const char *str)
                  ((*str > 0 && *str < font_count) ? *str : 0) * PSF1_WIDTH);
         offset = (dx + (PSF1_WIDTH * framebuffer_pitch));
         for (y = 0; y < height; ++y) {
-            line = offset;
-            mask = 1 << (PSF1_WIDTH - 1);
-            for (x = 0; x < strlen(str); ++x) {
-                switch (framebuffer_bpp) {
-                case 8: {
-                    multiboot_uint8_t *pixel = ( void * )framebuffer +
-                                               framebuffer_pitch * line + line;
-                    *pixel = colour;
-                } break;
-                case 15:
-                case 16: {
-                    multiboot_uint16_t *pixel = ( void * )framebuffer +
-                                                framebuffer_pitch * line +
-                                                2 * x;
-                    *pixel = (*pixel & colour) |
-                             (*pixel & (mask ? 0xFFFFFF : 0));
-                } break;
-                case 24: {
-                    multiboot_uint32_t *pixel = ( void * )framebuffer +
-                                                framebuffer_pitch * line +
-                                                3 * x;
-                    *pixel = (*pixel & colour) |
-                             (*pixel & (mask ? 0xFFFFFF : 0));
-                } break;
-                case 32: {
-                    multiboot_uint32_t *pixel = ( void * )framebuffer +
-                                                framebuffer_pitch * line +
-                                                4 * x;
-                    *pixel = (*pixel & colour) |
-                             (*pixel & (mask ? 0xFFFFFF : 0));
-                } break;
-                }
-                mask >>= 1;
-                line  += framebuffer_pitch;
-            }
+            line                                 = offset;
+            mask                                 = 1 << (PSF1_WIDTH - 1);
             *(( uint32_t * )framebuffer + line)  = 0;
             glyph                               += PSF1_WIDTH;
             offset                              += framebuffer_bpp;

@@ -32,29 +32,32 @@ ENTRY(_start)
 
 PHDRS
 {
+    mdata   PT_LOAD FLAGS(6); /* Read + Write   (RW) */
+    mtext   PT_LOAD FLAGS(5); /* Read + Write   (RW) */
     text    PT_LOAD FLAGS(5); /* Read + Execute (RX) */
     rodata  PT_LOAD FLAGS(4); /* Read-only      (RO) */
     data    PT_LOAD FLAGS(6); /* Read + Write   (RW) */
     bss     PT_LOAD FLAGS(6); /* Read + Write   (RW) */
 }
 
+/* The kernel will live at 3GB + 1MB in the virtual address space, */
+/* which will be mapped to 1MB in the physical address space. */
 SECTIONS
 {
-    . = 2M;
+    . = 0x00100000;
 
-    .boot BLOCK(4K) : ALIGN(4K)
-    {
-        KEEP(*(.multiboot_header))
-        KEEP(*(.boot))
-    } :text
+	_kernel_start = .;
+    .multiboot.data : {
+        KEEP(*(.multiboot.data))
+    } :mdata
 
-    .vectors BLOCK(4K) : ALIGN(4K)
-    {
-        KEEP(*(.vectors .vectors.*))
-    } :text
+   .multiboot.text : {
+       KEEP(*(.multiboot.text))
+   } :mtext
 
-    .text BLOCK(4K) : ALIGN(4K)
-    {
+	. += 0xC0000000;
+	.text ALIGN (4K) : AT (ADDR (.text) - 0xC0000000)
+	{
         . = ALIGN(4);
         KEEP(*(.init))
         . = ALIGN(4);
@@ -83,24 +86,26 @@ SECTIONS
         KEEP (*(SORT(.ctors.*)))
         KEEP (*crtend.o(.ctors))
 
-        KEEP(*(.text))
-    } :text
+        KEEP(*(.text .text.*))
+	} :text
 
-    .rodata BLOCK(4k) : ALIGN(4K)
-    {
-        *(.rodata)
-    } :rodata
+	.rodata ALIGN (4K) : AT (ADDR (.rodata) - 0xC0000000)
+	{
+		*(.rodata .rodata.*)
+	} :rodata
 
-    .data BLOCK(4K) : ALIGN(4K)
-    {
-        *(.data)
-    } :data
+	.data ALIGN (4K) : AT (ADDR (.data) - 0xC0000000)
+	{
+		*(.data .data.*)
+	} :data
 
-    .bss BLOCK(4K) : ALIGN(4K)
-    {
-        *(COMMON)
-        *(.bss)
-    } :bss
+	.bss ALIGN (4K) : AT (ADDR (.bss) - 0xC0000000)
+	{
+		*(COMMON)
+		*(.bss .bss.*)
+		*(.bootstrap_stack)
+	} :bss
+	_kernel_end = .;
 }
 
 /* vim: ft=ld ts=4 sts=4 sw=4 et ai cin */

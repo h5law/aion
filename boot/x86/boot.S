@@ -28,63 +28,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define  ASM_FILE        1
-#include <kernel/x86/multiboot2.h>
-
-        .section        .text
-        .global         _start
-        .type           _start,     @function
-_start:
-        jmp             multiboot_entry
-
-        .align          MULTIBOOT_HEADER_ALIGN
+        .section        .multiboot.data, "aw"
+        .align          8
 multiboot_header:
-        .long           MULTIBOOT2_HEADER_MAGIC
-        .long           MULTIBOOT_ARCHITECTURE_I386
-        .long           (multiboot_header_end - multiboot_header)
-        .long           -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (multiboot_header_end - multiboot_header))
-entry_address_tag_start:
-        .short          MULTIBOOT_HEADER_TAG_ENTRY_ADDRESS
-        .short          MULTIBOOT_HEADER_TAG_OPTIONAL
-        .long           entry_address_tag_end - entry_address_tag_start
-        .long           multiboot_entry
-entry_address_tag_end:
-/*  framebuffer_tag_start: */
-/*          .short          MULTIBOOT_HEADER_TAG_FRAMEBUFFER */
-/*          .short          MULTIBOOT_HEADER_TAG_OPTIONAL */
-/*          .long           framebuffer_tag_end - framebuffer_tag_start */
-/*          .long           720 */
-/*          .long           480 */
-/*          .long           24 */
-/*  framebuffer_tag_end: */
-        .short          MULTIBOOT_HEADER_TAG_END
+        .long           0xE85250D6
         .long           0
+        .long           multiboot_header_end - multiboot_header
+        .long           -(0xE85250D6 + 0 + (multiboot_header_end - multiboot_header))
+        .word           0
+        .word           0
         .long           8
 multiboot_header_end:
-multiboot_entry:
-        movl            $stack_top,                 %esp
 
-        pushl           $0
-        popf
-
-        pushl           %ebx                        /* Multiboot2 info structure pointer */
-        pushl           %eax                        /* Multiboot2 magic number */
-        call            kernel_entry
-
-        pushl           $halt_msg
-        call            printf
-        addl            $4,                         %esp
-.halt:
-        cli
-        hlt
-        jmp             .halt
-        .size           _start,                     . - _start;
-
-        .section        .bss
+        .section        .bootstrap_stack, "aw", @nobits
         .align          16
 stack_bottom:
-        .skip           16384                       /* 16KB stack */
+        .skip           16384
 stack_top:
+
+        .section        .bss, "aw", @nobits
+        .align          4096
+boot_page_directory:
+        .skip 4096
+boot_page_table1:
+        .skip 4096
 
         .section        .rodata
 eflags_msg:
@@ -101,5 +68,76 @@ kernel_msg:
         .asciz          "[kernel] Kernel entrypoint called\r\n"
 halt_msg:
         .asciz          "[boot] Kernel returned, halting system\r\n"
+
+        .section        .multiboot.text, "aw"
+        .global         _start
+        .type           _start,     @function
+_start:
+        /* Physical address of boot_page_table1 */
+        movl            $(boot_page_table1 - 0xC0000000), %edi
+        /* Map 0 address */
+        movl            $0, %esi
+        movl            $1023, %ecx
+
+1:
+        /* Map the kernel */
+        cmpl            $_kernel_start, %esi
+        jl              2f
+        cmpl            $(_kernel_end - 0xC0000000), %esi
+        jge             3f
+
+        /* Map physical address as present and writable */
+        movl            %esi, %edx
+        orl             $0x003, %edx
+        movl            %edx, (%edi)
+
+2:
+        /* Map boot pages */
+        addl            $4096, %esi
+        addl            $4, %edi
+        loop            1b
+
+3:
+        /* Map VGA VM to 0xC03FF000 as present, writable */
+        movl            $(0x000B8000 | 0x003), boot_page_table1 - 0xC0000000 + 1023 * 4
+
+        /* Identity map the page table to both virtual addresses
+         * 0x00000000 and 0xC0000000 */
+	    movl            $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 0
+	    movl            $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 768 * 4
+
+        /* Set CR3 to the boot page directory */
+        movl            $(boot_page_directory - 0xC0000000), %ecx
+        movl            %ecx, %cr3
+
+        /* Enable paging and write protect bit */
+        movl            %cr0, %ecx
+        orl             $0x80010000, %ecx
+        movl            %ecx, %cr0
+
+        /* Jump to higher half kernel (absolute) */
+        lea             4f, %ecx
+        jmp             *%ecx
+
+        .section        .text
+4:
+        /* Unmap identity boot page directory mapping */
+        movl            $0, boot_page_directory + 0
+
+        /* Force TBL flush */
+        movl            %cr3, %ecx
+        movl            %ecx, %cr3
+
+        movl            $stack_top,                 %esp
+
+        call            kernel_entry
+
+        pushl           $halt_msg
+        call            printf
+        addl            $4,                         %esp
+        cli
+.halt:
+        hlt
+        jmp             1b
 
 /* vim: ft=asm ts=4 sts=4 sw=4 et ai cin */

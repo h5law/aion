@@ -11,6 +11,8 @@ else ifeq ($(ARCHDIR),amd64)
 	ARCHDIR = x86_64
 else ifeq ($(ARCHDIR),i386)
 	ARCHDIR = x86
+else ifeq ($(ARCHDIR),i686)
+	ARCHDIR = x86
 else
 	$(error "Unsupported architecture: $(ARCH)")
 endif
