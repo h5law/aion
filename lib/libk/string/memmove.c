@@ -35,10 +35,10 @@ void *memmove(void *dst, const void *src, size_t size)
     unsigned char       *pd = ( unsigned char * )dst;
     const unsigned char *ps = ( const unsigned char * )src;
     if (pd < ps || pd >= ps + size)
-        for (size_t i = 0; i < size; i++)
+        for (size_t i = 0; i < size; ++i)
             pd[i] = ps[i];
     else
-        for (size_t i = size; i > 0; i--)
+        for (size_t i = size; i > 0; --i)
             pd[i - 1] = ps[i - 1];
     return dst;
 }

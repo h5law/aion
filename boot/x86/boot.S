@@ -54,6 +54,9 @@ IDT:
     .Base:
         .long           0
 
+        .equ            CPUID_EXTENSIONS, 0x80000000
+        .equ            CPUID_FEATURES, 0x80000001
+
         .equ            CR0_PAGING, 1 << 31
         .equ            PT_SIZE, 4096
         .equ            PML4T_ADDR, 0x1000
@@ -83,32 +86,27 @@ IDT:
         .global         _start
         .type           _start,     @function
 _start:
-        xorw            %ax, %ax
-        movw            %dx, %ax
-        movw            %es, %ax
-        movw            %si, %ax
-        movw            %sp, 0x7C00
+        mov             CPUID_EXTENSIONS, %eax
+        cpuid
+        cmp             CPUID_FEATURES, %eax
+        jb              1f
+        jmp             2f
+1:
+        mov             %al, 0x0E
+        mov             %bh, 0
+        mov             %bl, 7
+        mov             %cx, 1
 
-        /* Call print_real for debug */
-        xorl            %eax, %eax
-        movl            %eax, 0xb800
-        movl            %es, %eax
-        movl            %es:0, 0x41
-        movl            %es:1, 0x1f
+        mov             %al, debug_real
+        int             0x10
+        jmp             1b
 
+2:
         /* Enable A20 line */
         mov             %al, 0x92
         mov             %al, 2
         mov             0x92, %al
 
-        /* Transition to 32-bit protected mode (simplified) */
-        movl            %cr0, %eax
-        orl             $CR0_PM_ENABLE, %eax
-        movl            %eax, %cr0
-
-        /* Debug */
-        movl            %esi, debug_protected
-        call            print_protected
 
         /* Disable 32bit paging */
         movl            %cr0, %eax
@@ -139,28 +137,22 @@ _start:
         movl            $0, %esi
         movl            %ebx, PT_PRESENT | PT_READABLE
         movl            %ecx, PT_ENTRIES
-1:
-        cmpl            $_kernel_start, %esi
-        jl              2f
-        cmpl            $(_kernel_end - 0xC0000000), %esi
-        jge             3f
+3:
+        cmpl            0x1000, %esi
+        jl              4f
+        cmpl            0x200000, %esi
+        jge             5f
 
         movl            %esi, %edx
         orl             %ebx, %edx
         movl            %edx, (%edi)
 
-2:
+4:
         addl            PAGE_SIZE, %esi
         addl            PT_ENTRY_SIZE, %edi
         loop            1b
 
-3:
-        /* Memory map the VGA video memory */
-        movl            $PT_ADDR, %edi
-        movl            $(0xB8000 | PT_PRESENT | PT_READABLE), %eax
-        movl            %eax, 0x3FF000 / PT_SIZE * PT_ENTRY_SIZE(%edi)
-
-
+5:
         /* Identity map kernel 0-384 0x0 -> 0x3FFFFF 0xC0000000 -> 0xC03FFFFF */
         movl            $(PT_ADDR | PT_PRESENT | PT_READABLE), PDT_ADDR - 0xC0000000
         movl            $(PT_ADDR | PT_PRESENT | PT_READABLE), PDT_ADDR - 0xC0000000 + 384 * PT_ENTRY_SIZE
@@ -194,6 +186,10 @@ _start:
         movl            %eax, %cr0
         orl             %eax, CR0_PG_ENABLE | CR0_PM_ENABLE | CR0_WB_ENABLE
         movl            %cr0, %eax
+
+        /* Debug */
+        movl            %esi, debug_protected
+        call            print_protected
 
         .equ            VGA_MEMORY, 0xC03FF000
         .equ            VGA_HEIGHT, 80
